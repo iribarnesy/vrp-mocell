@@ -27,6 +27,7 @@ class Problem:
         self.vehicle_capacity = vehicle_capacity
         self.depot: Customer = list(filter(lambda x: x.number == 0, customers))[0]
         self.depot.is_serviced = True
+        self.number_of_variables = len(self.customers)
 
     def __repr__(self):
         return f"Instance: {self.name}\n" \
@@ -35,6 +36,26 @@ class Problem:
 
     def obj_func(self, routes):
         return sum(map(lambda x: x.total_distance, routes))
+
+    def evaluate(self, routes):
+        return self.obj_func(routes)
+    
+    def create_solution(self):
+        """Solution sampled from customer list, sorted by demand"""
+
+        def get_available_customers():
+            return sorted(filter(lambda x: not x.is_serviced, self.customers), key=lambda x: x.due_date)
+
+        solution = []
+        while len(get_available_customers()) > 0:
+            customers = get_available_customers()
+            route = []
+            for customer in customers:
+                if Route(self, route + [customer]).is_feasible:
+                    customer.is_serviced = True
+                    route.append(customer)
+            solution.append(Route(self, route))
+        return solution
 
     def print_canonical(self, routes):
         return "\n".join(list(map(lambda x: x.canonical_view, routes)))
